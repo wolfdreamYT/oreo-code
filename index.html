@@ -32,6 +32,8 @@
       border-radius: 10px;
       margin-bottom: 20px;
       min-height: 60px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
     .keyboard {
@@ -78,14 +80,49 @@
       margin-top: 10px;
       min-height: 40px;
       color: #fff;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    #pasteArea {
+      width: 90%;
+      max-width: 600px;
+      height: 100px;
+      background-color: #330033;
+      color: #ffb3ff;
+      border: 2px solid #ff66ff;
+      border-radius: 10px;
+      padding: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      resize: vertical;
+      margin-bottom: 10px;
+    }
+
+    #translateBtn {
+      background-color: #ff33cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: 0.2s;
+    }
+    #translateBtn:hover {
+      background-color: #ff66ff;
     }
   </style>
 </head>
 <body>
   <h1>Oreo Code 1.0</h1>
+  <textarea id="pasteArea" placeholder="Paste Oreo or type to decypher..."></textarea>
+  <button id="translateBtn">Whats this oreo telling me?</button>
+
   <div id="display"></div>
   <div class="keyboard" id="keyboard"></div>
-  <div id="translated">Press a key to see its Oreo Code.</div>
+  <div id="translated">Start your Oreo adventure!</div>
   <div id="decoded"></div>
 
   <script>
@@ -105,36 +142,87 @@
     const keyboard = document.getElementById("keyboard");
     const translated = document.getElementById("translated");
     const decoded = document.getElementById("decoded");
+    const pasteArea = document.getElementById("pasteArea");
+    const translateBtn = document.getElementById("translateBtn");
 
     function addToDisplay(key) {
-      const upperKey = key.toUpperCase();
-      if (oreoCode[upperKey]) {
-        const code = oreoCode[upperKey];
-        display.textContent += code + " | ";
-        translated.textContent = `${upperKey} → ${code}`;
-        updateDecoded();
-      } else if (key === "Backspace") {
-        let parts = display.textContent.trim().split("|").map(x => x.trim()).filter(Boolean);
-        if (parts.length > 0) parts.pop();
-        display.textContent = parts.join(" | ") + (parts.length > 0 ? " | " : "");
-        updateDecoded();
-      }
+        const upperKey = key.toUpperCase();
+        if (key === "Space") {
+            display.textContent += " || ";
+            updateDecoded();
+        } else if (oreoCode[upperKey]) {
+            const code = oreoCode[upperKey];
+            display.textContent += code + " | ";
+            translated.textContent = `${upperKey} → ${code}`;
+            updateDecoded();
+        } else if (key === "Backspace") {
+            let text = display.textContent.trim();
+            if (text.endsWith("|")) {
+                text = text.slice(0, text.lastIndexOf("|")).trim();
+            } else if (text.endsWith("||")) {
+                text = text.slice(0, text.lastIndexOf("||")).trim();
+            } else {
+                text = "";
+            }
+            display.textContent = text + (text.length ? " " : "");
+            updateDecoded();
+        }
     }
 
     function updateDecoded() {
+        const codeToLetter = Object.fromEntries(
+            Object.entries(oreoCode).map(([k, v]) => [v, k])
+        );
+        
+        const wordChunks = display.textContent.trim().split("||").map(w => w.trim()).filter(Boolean);
+
+        let decodedWords = wordChunks.map(word => {
+            const letters = word.split("|").map(x => x.trim()).filter(Boolean);
+            let result = [];
+            for (let chunk of letters) {
+                if (codeToLetter[chunk]) {
+                    result.push(codeToLetter[chunk]);
+                } else {
+                    result.push("?");
+                }
+            }
+            return result.join("");
+        });
+
+        decoded.textContent = decodedWords.length > 0 ? `OREO → ${decodedWords.join(" ")}` : "";
+    }
+
+    function translatePastedCode() {
       const codeToLetter = Object.fromEntries(
-        Object.entries(oreoCode).map(([k, v]) => [v, k])
+          Object.entries(oreoCode).map(([k, v]) => [v, k])
       );
-      const parts = display.textContent.trim().split("|").map(x => x.trim()).filter(Boolean);
-      let result = [];
-      for (let chunk of parts) {
-        if (codeToLetter[chunk]) {
-          result.push(codeToLetter[chunk]);
-        } else {
-          result.push("?");
-        }
+
+      const input = pasteArea.value.trim();
+
+      if (!input) {
+        decoded.textContent = "Paste Oreo to decypher.";
+        return;
       }
-      decoded.textContent = result.length > 0 ? `OREO → ${result.join("")}` : "";
+
+      const wordChunks = input
+        .split("||")
+        .map(w => w.trim())
+        .filter(Boolean);
+
+      let decodedWords = wordChunks.map(word => {
+        const letters = word.split("|").map(x => x.trim()).filter(Boolean);
+        let result = [];
+        for (let chunk of letters) {
+          if (codeToLetter[chunk]) {
+            result.push(codeToLetter[chunk]);
+          } else {
+            result.push("?");
+          }
+        }
+        return result.join("");
+      });
+
+      decoded.textContent = decodedWords.length > 0 ? `OREO → ${decodedWords.join(" ")}` : "";
     }
 
     const layout = [
@@ -142,7 +230,7 @@
       ["A","S","D","F","G","H","J","K","L"],
       ["Z","X","C","V","B","N","M"],
       ["1","2","3","4","5","6","7","8","9","0"],
-      ["Backspace"]
+      ["Backspace", "Space"]
     ];
 
     layout.forEach(row => {
@@ -157,6 +245,8 @@
       });
       keyboard.appendChild(rowDiv);
     });
+
+    translateBtn.onclick = translatePastedCode;
 
     document.addEventListener("keydown", e => {
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
