@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oreo Code 1.0</title>
+  <style>
+    body {
+      background-color: #1a001f;
+      color: #ffb3ff;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #ff66ff;
+    }
+
+    #display {
+      width: 90%;
+      max-width: 600px;
+      background-color: #330033;
+      border: 2px solid #ff66ff;
+      padding: 15px;
+      font-size: 1.3rem;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      min-height: 60px;
+    }
+
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .key {
+      padding: 12px;
+      background-color: #ff33cc;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .key:hover {
+      background-color: #ff66ff;
+    }
+
+    #translated, #decoded {
+      width: 90%;
+      max-width: 600px;
+      background-color: #330033;
+      border: 2px solid #ff66ff;
+      padding: 15px;
+      font-size: 1.1rem;
+      border-radius: 10px;
+      margin-top: 10px;
+      min-height: 40px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Oreo Code 1.0</h1>
+  <div id="display"></div>
+  <div class="keyboard" id="keyboard"></div>
+  <div id="translated">Press a key to see its Oreo Code.</div>
+  <div id="decoded"></div>
+
+  <script>
+    const oreoCode = {
+      A: "Re Or", B: "Or Re Re Re", C: "Or Re Or Re", D: "Or Re Re", E: "Re",
+      F: "Re Re Or Re", G: "Or Or Re", H: "Re Re Re Re", I: "Re Re", J: "Re Or Or Or",
+      K: "Or Re Or", L: "Re Or Re Re", M: "Or Or", N: "Or Re", O: "Or Or Or",
+      P: "Re Or Or Re", Q: "Or Or Re Or", R: "Re Or Re", S: "Re Re Re", T: "Or",
+      U: "Re Re Or", V: "Re Re Re Or", W: "Re Or Or", X: "Or Re Re Or", Y: "Or Re Or Or",
+      Z: "Or Or Re Re",
+      0: "Or Or Or Or Or", 1: "Re Or Or Or Or", 2: "Re Re Or Or Or", 3: "Re Re Re Or Or",
+      4: "Re Re Re Re Or", 5: "Re Re Re Re Re", 6: "Or Re Re Re Re", 7: "Or Or Re Re Re",
+      8: "Or Or Or Re Re", 9: "Or Or Or Or Re"
+    };
+
+    const display = document.getElementById("display");
+    const keyboard = document.getElementById("keyboard");
+    const translated = document.getElementById("translated");
+    const decoded = document.getElementById("decoded");
+
+    function addToDisplay(key) {
+      const upperKey = key.toUpperCase();
+      if (oreoCode[upperKey]) {
+        const code = oreoCode[upperKey];
+        display.textContent += code + " | ";
+        translated.textContent = `${upperKey} → ${code}`;
+        updateDecoded();
+      } else if (key === "Backspace") {
+        let parts = display.textContent.trim().split("|").map(x => x.trim()).filter(Boolean);
+        if (parts.length > 0) parts.pop();
+        display.textContent = parts.join(" | ") + (parts.length > 0 ? " | " : "");
+        updateDecoded();
+      }
+    }
+
+    function updateDecoded() {
+      const codeToLetter = Object.fromEntries(
+        Object.entries(oreoCode).map(([k, v]) => [v, k])
+      );
+      const parts = display.textContent.trim().split("|").map(x => x.trim()).filter(Boolean);
+      let result = [];
+      for (let chunk of parts) {
+        if (codeToLetter[chunk]) {
+          result.push(codeToLetter[chunk]);
+        } else {
+          result.push("?");
+        }
+      }
+      decoded.textContent = result.length > 0 ? `OREO → ${result.join("")}` : "";
+    }
+
+    const layout = [
+      ["Q","W","E","R","T","Y","U","I","O","P"],
+      ["A","S","D","F","G","H","J","K","L"],
+      ["Z","X","C","V","B","N","M"],
+      ["1","2","3","4","5","6","7","8","9","0"],
+      ["Backspace"]
+    ];
+
+    layout.forEach(row => {
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "row";
+      row.forEach(key => {
+        const btn = document.createElement("button");
+        btn.className = "key";
+        btn.textContent = key;
+        btn.onclick = () => addToDisplay(key);
+        rowDiv.appendChild(btn);
+      });
+      keyboard.appendChild(rowDiv);
+    });
+
+    document.addEventListener("keydown", e => {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          addToDisplay("Backspace");
+        } else {
+          addToDisplay(e.key);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
